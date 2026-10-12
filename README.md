@@ -1,79 +1,79 @@
 # zTractor
 
-Operação z/OS com o **Zowe CLI**, a partir de **planilhas Excel, APIs REST e documentos de texto**,
-em **Windows ou Linux**. Todo acesso ao mainframe passa pelo z/OSMF via `zowe`; não há SSH.
+z/OS operations with the **Zowe CLI**, driven by **Excel spreadsheets, REST APIs and text documents**,
+on **Windows or Linux**. All mainframe access goes through z/OSMF via `zowe`; there is no SSH.
 
-O zTractor tem duas partes:
+zTractor has two parts:
 
-- **Motor `ztractor`** (Python): lê a entrada, transforma cada linha numa ação, monta o comando
-  `zowe ... --rfj`, pede confirmação para o que é destrutivo, executa e grava os resultados
-  em Excel, CSV, JSON ou por POST numa API.
-- **Skills** em [`.claude/skills`](.claude/skills): ensinam o Claude a usar o motor por família
-  (setup, lote, jobs, datasets, USS, console, TSO), com regras de segurança de cada uma.
+- **`ztractor` engine** (Python): reads the input, turns each row into an action, builds the
+  `zowe ... --rfj` command, asks for confirmation on anything destructive, runs it and writes the
+  results to Excel, CSV, JSON or a POST to an API.
+- **Skills** in [`.claude/skills`](.claude/skills): teach Claude how to use the engine for each family
+  (setup, batch, jobs, datasets, USS, console, TSO), with the safety rules for each one.
 
 ```
-Excel / CSV / JSON / YAML / texto / API REST
+Excel / CSV / JSON / YAML / text / REST API
               │
               ▼
-   ztractor plan  ──►  revisão do plano (risco por tarefa)
+   ztractor plan  ──►  plan review (risk per task)
               │
               ▼
-   ztractor run   ──►  zowe <comando> --rfj  ──►  z/OSMF  ──►  z/OS
+   ztractor run   ──►  zowe <command> --rfj  ──►  z/OSMF  ──►  z/OS
               │
               ▼
-   resultados.xlsx / .csv / .json / POST
+   results.xlsx / .csv / .json / POST
 ```
 
-## Instalação
+## Installation
 
-Pré-requisitos: Node.js 18+, Python 3.9+ e acesso ao z/OSMF.
+Prerequisites: Node.js 18+, Python 3.9+ and access to z/OSMF.
 
 ```bash
 npm install -g @zowe/cli@zowe-v3-lts
-python -m pip install -e .          # dentro deste repositório
-zowe config init --global-config    # host, porta e usuário do z/OSMF
-zowe config secure --global-config  # senha no cofre seguro do Zowe
+python -m pip install -e .          # inside this repository
+zowe config init --global-config    # z/OSMF host, port and user
+zowe config secure --global-config  # password in Zowe's secure credential store
 ztractor do setup.check
 ```
 
-No Windows os mesmos comandos funcionam no PowerShell ou no cmd. Se o `zowe` não for achado,
-defina `ZTRACTOR_ZOWE` com o caminho do `zowe.cmd`.
+On Windows the same commands work in PowerShell or cmd. If `zowe` is not found,
+set `ZTRACTOR_ZOWE` to the path of `zowe.cmd`.
 
-## Uso
+## Usage
 
 ```bash
-ztractor actions                              # catálogo de ações, risco e campos
-ztractor template tarefas.xlsx                # planilha modelo
-ztractor plan tarefas.xlsx                    # mostra os comandos, não executa
-ztractor run tarefas.xlsx -o resultados.xlsx  # executa; destrutivas ficam puladas
-ztractor run tarefas.xlsx --yes               # executa também as destrutivas
-ztractor do ds.list "HLQ.**"                  # uma ação avulsa
+ztractor actions                              # action catalog, risk and fields
+ztractor template tasks.xlsx                  # template spreadsheet
+ztractor plan tasks.xlsx                      # shows the commands, does not run them
+ztractor run tasks.xlsx -o results.xlsx       # runs; destructive tasks are skipped
+ztractor run tasks.xlsx --yes                 # also runs destructive tasks
+ztractor do ds.list "HLQ.**"                  # a single ad hoc action
 ```
 
-Opções de `plan` e `run`: `--sheet ABA`, `--var NOME=valor`, `--profile PERFIL`,
+Options for `plan` and `run`: `--sheet SHEET`, `--var NAME=value`, `--profile PROFILE`,
 `--only jobs,ds.list`, `--header "Authorization: Bearer ${API_TOKEN}"`,
 `--post-results URL`, `--stop-on-error`.
 
-Código de saída: `0` tudo ok, `1` alguma tarefa falhou ou é inválida, `2` alguma destrutiva ficou sem confirmação.
+Exit code: `0` all ok, `1` some task failed or is invalid, `2` some destructive task was left unconfirmed.
 
-## Formatos de entrada
+## Input formats
 
-Cada tarefa tem `action` e os campos da ação. `${NOME}` em qualquer campo é trocado pela variável
-do plano, de `--var` ou do ambiente.
+Each task has an `action` and that action's fields. `${NAME}` in any field is replaced by the plan
+variable, by `--var` or by the environment variable of that name.
 
-| Formato | Como escrever |
+| Format | How to write it |
 | --- | --- |
-| Excel (`.xlsx`) | aba `tasks` com cabeçalho na linha 1; aba `vars` com `name` e `value`; coluna `enabled` = `nao` desliga a linha |
-| CSV | mesmo cabeçalho; separador `,` ou `;` |
-| JSON / YAML | lista de tarefas ou `{"vars": {...}, "tasks": [...]}` |
-| Texto | `acao alvo chave=valor` por linha; `set NOME=valor`; `#` comenta |
-| API REST | URL `http(s)` que devolve o JSON acima; cabeçalhos com `--header` |
+| Excel (`.xlsx`) | `tasks` sheet with the header on row 1; `vars` sheet with `name` and `value`; an `enabled` column set to `no` (or `nao`) turns a row off |
+| CSV | same header; `,` or `;` separator |
+| JSON / YAML | a list of tasks or `{"vars": {...}, "tasks": [...]}` |
+| Text | `action target key=value` per line; `set NAME=value`; `#` starts a comment |
+| REST API | an `http(s)` URL that returns the JSON above; headers via `--header` |
 
-Exemplos em [`examples/`](examples).
+Examples in [`examples/`](examples).
 
-## Ações
+## Actions
 
-| Família | Ações |
+| Family | Actions |
 | --- | --- |
 | setup | `setup.check`, `setup.systems` |
 | jobs | `jobs.list`, `jobs.status`, `jobs.submit`, `jobs.spool-list`, `jobs.spool-view`, `jobs.spool-all`, `jobs.download`, `jobs.cancel`, `jobs.delete` |
@@ -82,14 +82,15 @@ Exemplos em [`examples/`](examples).
 | console | `console.issue`, `console.logs` |
 | tso | `tso.issue` |
 
-Risco de cada ação: **leitura** roda direto; **escrita** roda e aparece no plano; **destrutiva**
-(apagar, sobrescrever, cancelar, comando de operador que não seja display, TSO que altera) exige
-`--yes` ou confirmação no terminal.
+Risk levels (shown in the tool's output with their Portuguese names): **leitura** (read) runs
+directly; **escrita** (write) runs and is listed in the plan; **destrutiva** (destructive: delete,
+overwrite, cancel, any operator command other than display, TSO commands that change something)
+requires `--yes` or confirmation at the terminal.
 
-## Desenvolvimento
+## Development
 
 ```bash
 python -m pip install -e ".[dev]"
-python -m pytest                      # usa um Zowe simulado
-python tools/check_zowe_flags.py      # confere cada comando e flag no Zowe CLI instalado
+python -m pytest                      # uses a simulated Zowe
+python tools/check_zowe_flags.py      # checks every command and flag against the installed Zowe CLI
 ```
