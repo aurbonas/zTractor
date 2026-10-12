@@ -1,0 +1,4 @@
+action;target;owner;prefix;command
+jobs.list;;${HLQ};*;
+ds.list;${HLQ}.**;;;
+console.issue;;;;D A,L

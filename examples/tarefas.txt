@@ -1,0 +1,11 @@
+# Exemplo de entrada em texto: uma tarefa por linha.
+# Rode antes: ztractor plan examples/tarefas.txt --var HLQ=SEUUSER
+set PREFIXO=DAILY*
+
+setup.check
+jobs.list owner=${HLQ} prefix=${PREFIXO}
+ds.list ${HLQ}.**
+ds.members ${HLQ}.JCL
+ds.view ${HLQ}.JCL(DAILY01) range=0,20
+console.issue command="D T"
+tso.issue command="LISTCAT LEVEL(${HLQ})"
