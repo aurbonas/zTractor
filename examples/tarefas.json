@@ -1,0 +1,9 @@
+{
+  "vars": {"HLQ": "Z00000"},
+  "tasks": [
+    {"action": "ds.create", "target": "${HLQ}.ZTRACTOR.JCL", "type": "pdse", "recfm": "FB", "lrecl": 80, "size": "1CYL"},
+    {"action": "ds.upload", "target": "${HLQ}.ZTRACTOR.JCL(IEFBR14)", "file": "examples/jcl/iefbr14.jcl", "render": "sim"},
+    {"action": "jobs.submit", "target": "examples/jcl/iefbr14.jcl", "wait": "sim"},
+    {"action": "jobs.list", "owner": "${HLQ}", "prefix": "ZTRBR14*"}
+  ]
+}
